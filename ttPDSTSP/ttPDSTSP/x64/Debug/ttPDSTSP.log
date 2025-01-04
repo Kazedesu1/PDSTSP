@@ -1,0 +1,9 @@
+﻿  Instances.cpp
+C:\Users\motai\source\repos\ttPDSTSP\ttPDSTSP\Instances.cpp(52,38): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+C:\Users\motai\source\repos\ttPDSTSP\ttPDSTSP\Instances.cpp(52,38): warning C4244:         with
+C:\Users\motai\source\repos\ttPDSTSP\ttPDSTSP\Instances.cpp(52,38): warning C4244:         [
+C:\Users\motai\source\repos\ttPDSTSP\ttPDSTSP\Instances.cpp(52,38): warning C4244:             _Ty=int
+C:\Users\motai\source\repos\ttPDSTSP\ttPDSTSP\Instances.cpp(52,38): warning C4244:         ]
+C:\Users\motai\source\repos\ttPDSTSP\ttPDSTSP\Instances.cpp(75,21): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\motai\source\repos\ttPDSTSP\ttPDSTSP\Instances.cpp(88,22): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+  ttPDSTSP.vcxproj -> C:\Users\motai\source\repos\ttPDSTSP\x64\Debug\ttPDSTSP.exe
