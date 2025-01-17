@@ -23,7 +23,7 @@ bool INSTANCE::loadFromFile(const string& filename)
         file.close();
 
         // Đọc tauprime.csv
-        /*ifstream file2(filename + "/tauprime.csv");
+        ifstream file2(filename + "/tauprime.csv");
         if (!file2.is_open()) {
             throw runtime_error("Unable to open tauprime.csv file.");
         }
@@ -37,7 +37,7 @@ bool INSTANCE::loadFromFile(const string& filename)
             }
             tauprime.push_back(row2);
         }
-        file2.close();*/
+        file2.close();
 
         //// Đọc Cprime.csv
         ifstream file3(filename + "/Cprime.csv");
@@ -86,7 +86,7 @@ bool INSTANCE::loadFromFile(const string& filename)
 		}
 
         for (int idx = Cprime.size() - 1; idx >= 0; idx--) {
-            if ((dDrones[Cprime[idx]]/2 * nodes[0][3]) > 13.33) {
+            if ((tauprime[0][Cprime[idx]]) > 15) {
                 Cprime.erase(Cprime.begin() + idx);
             }
         }
@@ -109,7 +109,7 @@ void INSTANCE::displayData()
 		}
 		cout << endl;
 	}
-	/*cout << "tauprime: " << endl;
+	cout << "tauprime: " << endl;
     for (const auto& row : tauprime)
     {
         for (const auto& value : row)
@@ -117,7 +117,7 @@ void INSTANCE::displayData()
             cout << value << " ";
         }
         cout << endl;
-    }*/
+    }
 	cout << "Cprime: ";
 	for (const auto& value : Cprime)
 	{

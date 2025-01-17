@@ -10,7 +10,7 @@ class INSTANCE
 {
 public:
     vector<vector<double>> tau;
-    //vector<vector<double>> tauprime;
+    vector<vector<double>> tauprime;
     vector<vector<double>> nodes;
     vector<int> Cprime;
     vector<int> C;

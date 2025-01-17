@@ -1,15 +1,94 @@
-#include <iostream>
+﻿#include <iostream>
+#include <fstream>
+#include <vector>
 #include "Solver.h"
 
 using namespace std;
 
 int main() {
-    string filename = "20140813T111604";
-    INSTANCE instance;
-    instance.loadFromFile(filename);
-    //instance.displayData();
-    Solver solver(instance);
-    solver.solve();
-    solver.displaySolution();
+    vector<string> filenames = {
+        "20140813T111604", "20140813T111606", "20140813T111609", "20140813T111611",
+        "20140813T111613", "20140813T111615", "20140813T111617", "20140813T111619",
+        "20140813T111621", "20140813T111623", "20140813T111626", "20140813T111628",
+        "20140813T111630", "20140813T111632", "20140813T111634", "20140813T111636",
+        "20140813T111638", "20140813T111640", "20140813T111642", "20140813T111644",
+        "20140813T111646", "20140813T111649", "20140813T111651", "20140813T111653",
+        "20140813T111655", "20140813T111657", "20140813T111659", "20140813T111701",
+        "20140813T111703", "20140813T111705", "20140813T111708", "20140813T111710",
+        "20140813T111712", "20140813T111714", "20140813T111716", "20140813T111718",
+        "20140813T111720", "20140813T111722", "20140813T111725", "20140813T111727",
+        "20140813T111729", "20140813T111731", "20140813T111733", "20140813T111735",
+        "20140813T111737", "20140813T111740", "20140813T111742", "20140813T111744",
+        "20140813T111746", "20140813T111748", "20140813T111750", "20140813T111752",
+        "20140813T111754", "20140813T111756", "20140813T111758", "20140813T111801",
+        "20140813T111803", "20140813T111805", "20140813T111807", "20140813T111809",
+        "20140813T111811", "20140813T111813", "20140813T111815", "20140813T111817",
+        "20140813T111820", "20140813T111822", "20140813T111824", "20140813T111826",
+        "20140813T111828", "20140813T111830", "20140813T111832", "20140813T111834",
+        "20140813T111836", "20140813T111838", "20140813T111841", "20140813T111843",
+        "20140813T111845", "20140813T111847", "20140813T111849", "20140813T111851",
+        "20140813T111853", "20140813T111855", "20140813T111857", "20140813T111859",
+        "20140813T111902", "20140813T111904", "20140813T111906", "20140813T111908",
+        "20140813T111910", "20140813T111912", "20140813T111914", "20140813T111916",
+        "20140813T111918", "20140813T111920", "20140813T111922", "20140813T111925",
+        "20140813T111927", "20140813T111929", "20140813T111931", "20140813T111933",
+        "20140813T111935", "20140813T111937", "20140813T111939", "20140813T111941",
+        "20140813T111943", "20140813T111945", "20140813T111948", "20140813T111950",
+        "20140813T111952", "20140813T111954", "20140813T111956", "20140813T111959",
+        "20140813T112001", "20140813T112003", "20140813T112005", "20140813T112007",
+        "20140813T112010", "20140813T112012", "20140813T112014", "20140813T112016"
+    };
+
+    ofstream outFile("pdstsp.csv");
+    outFile << "Filename,TruckRoute,TruckTime,DroneTimes,MaxTotalTime\n";
+
+    for (const auto& filename : filenames) {
+        INSTANCE instance;
+        instance.loadFromFile(filename);
+
+        Solver solver(instance);
+        solver.solve();
+
+        // Ghi kết quả vào CSV
+        outFile << filename << ",";
+        outFile << "\""; // Đặt Truck Route trong dấu ngoặc kép
+        for (size_t i = 0; i < solver.truckRoute.size(); ++i) {
+            outFile << solver.truckRoute[i];
+            if (i < solver.truckRoute.size() - 1) {
+                outFile << " ";
+            }
+        }
+        outFile << "\",";
+        outFile << solver.totalTimeTruck << ",";
+
+        // Ghi thời gian của từng drone
+        outFile << "\"";
+        for (size_t i = 0; i < solver.drones.size(); ++i) {
+            outFile << solver.drones[i].total_time;
+            if (i < solver.drones.size() - 1) {
+                outFile << " ";
+            }
+        }
+        outFile << "\",";
+        outFile << solver.tinhTotaltime(solver.drones, solver.totalTimeTruck) << "\n";
+    }
+
+    outFile.close();
+    cout << "Results written to pdstsp.csv\n";
     return 0;
 }
+//#include <iostream>
+//#include "Solver.h"
+//
+//using namespace std;
+//
+//int main() {
+//    string filename = "20140813T111604";
+//    INSTANCE instance;
+//    instance.loadFromFile(filename);
+//    //instance.displayData();
+//    Solver solver(instance);
+//    solver.solve();
+//    solver.displaySolution();
+//    return 0;
+//}

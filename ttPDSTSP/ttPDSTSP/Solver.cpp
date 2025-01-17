@@ -2,6 +2,8 @@
 #include <iostream>
 #include <algorithm>
 #include <limits>
+#include <cstdlib>
+#include <ctime>
 using namespace std;
 
 Solver::Solver(const INSTANCE& inst) : instance(inst) {}
@@ -10,83 +12,63 @@ void Solver::solve() {
     drones.resize(instance.UAVs);
     vector<int> remainingCustomers = instance.C;
 
-    while (!remainingCustomers.empty()) {
-        int bestTruckNode = -1;
-        double minTimeTruck = numeric_limits<double>::infinity();
-        int bestTruckPos = -1;
+    for (int c : remainingCustomers) {
+        int choseTruck = 0;
+        int posBest = -1;  
+        int bestDrone = -1; 
+        double bestTime = numeric_limits<double>::infinity();
 
-        double temptimetruck;
-        double Totaltime;
-        for (int node : remainingCustomers) {
-            for (int j = 1; j < truckRoute.size(); ++j) {
+        for (int j = 1; j < truckRoute.size(); ++j) {
+            double timeIncrease = tinhTimeTruckTang(truckRoute, instance.tau, c, j);
+            double candidateTruckTime = totalTimeTruck + timeIncrease;
 
-                temptimetruck = totalTimeTruck;
-                temptimetruck += tinhTimeTruckTang(truckRoute, instance.tau, node, j);
-                Totaltime = -1;
-                for (Drones drone : drones) {
-                    if (drone.total_time >= Totaltime) {
-                        Totaltime = drone.total_time;
-                    }
+            double maxDroneTime = 0.0;
+            for (const auto& drone : drones) {
+                maxDroneTime = max(maxDroneTime, drone.total_time);
+            }
+
+            double totalCandidateTime = max(candidateTruckTime, maxDroneTime);
+
+            if (totalCandidateTime < bestTime) {
+                bestTime = totalCandidateTime;
+                posBest = j;
+				choseTruck = 1;  
+            }
+        }
+
+        if (find(instance.Cprime.begin(), instance.Cprime.end(), c) != instance.Cprime.end()) {
+            for (int k = 0; k < drones.size(); ++k) {
+                double droneTimeIncrease = instance.tauprime[0][c] * 2;
+                double candidateDroneTime = drones[k].total_time + droneTimeIncrease;
+
+                double maxDroneTime = 0.0;
+                for (const auto& drone : drones) {
+                    maxDroneTime = max(maxDroneTime, drone.total_time);
                 }
-                if (temptimetruck >= Totaltime) {
-                    Totaltime = temptimetruck;
-                }
 
-                if (Totaltime < minTimeTruck) {
-                    minTimeTruck = Totaltime;
-                    bestTruckNode = node;
-                    bestTruckPos = j;
+                double totalCandidateTime = max({ totalTimeTruck, candidateDroneTime, maxDroneTime });
+
+                if (totalCandidateTime <= bestTime) {
+                    bestTime = totalCandidateTime;
+                    bestDrone = k;  
+					choseTruck = 0;
                 }
             }
         }
 
-        int bestDrone = -1;
-        int bestDroneNode = -1;
-        double minTimeDrone = numeric_limits<double>::infinity();
-
-        double temptimedrone;
-        for (int i = 0; i < drones.size(); ++i) {
-            for (int node : remainingCustomers) {
-                if (find(instance.Cprime.begin(), instance.Cprime.end(), node) != instance.Cprime.end()) {
-
-                    temptimedrone = drones[i].total_time;
-                    temptimedrone += instance.dDrones[node];
-                    Totaltime = -1;
-                    for (Drones drone : drones) {
-                        if (drone.total_time >= Totaltime) {
-                            Totaltime = drone.total_time;
-                        }
-                    }
-                    if (temptimedrone >= Totaltime) {
-                        Totaltime = temptimedrone;
-                    }
-                    if (totalTimeTruck >= Totaltime) {
-                        Totaltime = totalTimeTruck;
-                    }
-
-                    if (Totaltime < minTimeDrone ) {
-                        minTimeDrone = Totaltime;
-                        bestDrone = i;
-                        bestDroneNode = node;
-                    }
-                }
-            }
+        if (choseTruck == 0) {
+            drones[bestDrone].route.push_back(c);
+            drones[bestDrone].total_time += instance.tauprime[0][c] * 2;
         }
-
-        if (minTimeDrone <= minTimeTruck) {
-            drones[bestDrone].route.push_back(bestDroneNode);
-            drones[bestDrone].total_time += instance.dDrones[bestDroneNode];
-            remainingCustomers.erase(remove(remainingCustomers.begin(), remainingCustomers.end(), bestDroneNode), remainingCustomers.end());
-        }
-        else if (bestTruckNode != -1) {
-            truckRoute.insert(truckRoute.begin() + bestTruckPos, bestTruckNode);
-            totalTimeTruck = minTimeTruck;
-            remainingCustomers.erase(remove(remainingCustomers.begin(), remainingCustomers.end(), bestTruckNode), remainingCustomers.end());
+        else if (choseTruck == 1) {
+            totalTimeTruck += tinhTimeTruckTang(truckRoute, instance.tau, c, posBest);
+            truckRoute.insert(truckRoute.begin() + posBest, c);
         }
     }
 }
 
-double Solver::tinhTotaltime(const vector<Drones>& drones, double totalTimeTruck)  const {
+
+double Solver::tinhTotaltime(const vector<Drones>& drones, double totalTimeTruck) const {
     double maxDroneTime = 0.0;
     for (const auto& drone : drones) {
         if (drone.total_time > maxDroneTime) {
@@ -96,20 +78,17 @@ double Solver::tinhTotaltime(const vector<Drones>& drones, double totalTimeTruck
     return max(maxDroneTime, totalTimeTruck);
 }
 
-double Solver::tinhTimeTruckTang(const vector<int>& route, const vector<vector<double>>& tau, int node, int insertPos ) const {
+double Solver::tinhTimeTruckTang(const vector<int>& route, const vector<vector<double>>& tau, int node, int insertPos) const {
     int prevNode = route[insertPos - 1];
     int nextNode = route[insertPos];
 
-    double totalCost = -tau[prevNode][nextNode] +
-        tau[prevNode][node] +
-        tau[node][nextNode];
-    return totalCost;
+    // Tính thời gian tăng thêm khi chèn nút
+    double timeIncrease = tau[prevNode][node] + tau[node][nextNode] - tau[prevNode][nextNode];
+    return timeIncrease;
 }
-
 
 void Solver::displaySolution() const {
     cout << "\nSolution:\n";
-
     // Hiển thị lộ trình của xe tải
     cout << "Truck Route: ";
     for (size_t i = 0; i < truckRoute.size(); ++i) {
@@ -134,5 +113,4 @@ void Solver::displaySolution() const {
 
     double maxTotalTime = tinhTotaltime(drones, totalTimeTruck);
     cout << "\nMaximum Total Time (Truck + Drones): " << maxTotalTime << "\n";
-    
 }

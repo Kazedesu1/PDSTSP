@@ -23,6 +23,9 @@ public:
     std::vector<Drones> drones;
     std::vector<int> truckRoute = { 0, 0 };
     double totalTimeTruck = 0;
+    void ruinAndRecreate() ;
+    void localSearch() ;
+
 };
 
 #endif // SOLVER_H
