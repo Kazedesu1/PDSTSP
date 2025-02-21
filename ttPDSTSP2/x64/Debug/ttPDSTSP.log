@@ -1,0 +1,11 @@
+﻿  Solver.cpp
+C:\Users\motai\source\repos\ttPDSTSP - Copy (2)\ttPDSTSP\Solver.cpp(15,20): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+  utils.cpp
+C:\Users\motai\source\repos\ttPDSTSP - Copy (2)\ttPDSTSP\utils.cpp(6,17): warning C4244: 'initializing': conversion from '_Rep' to 'int', possible loss of data
+C:\Users\motai\source\repos\ttPDSTSP - Copy (2)\ttPDSTSP\utils.cpp(6,17): warning C4244:         with
+C:\Users\motai\source\repos\ttPDSTSP - Copy (2)\ttPDSTSP\utils.cpp(6,17): warning C4244:         [
+C:\Users\motai\source\repos\ttPDSTSP - Copy (2)\ttPDSTSP\utils.cpp(6,17): warning C4244:             _Rep=__int64
+C:\Users\motai\source\repos\ttPDSTSP - Copy (2)\ttPDSTSP\utils.cpp(6,17): warning C4244:         ]
+C:\Users\motai\source\repos\ttPDSTSP - Copy (2)\ttPDSTSP\utils.cpp(61,29): warning C4244: 'return': conversion from '__int64' to 'int', possible loss of data
+  Generating Code...
+  ttPDSTSP.vcxproj -> C:\Users\motai\source\repos\ttPDSTSP - Copy (2)\x64\Debug\ttPDSTSP.exe
