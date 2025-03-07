@@ -1,0 +1,7 @@
+﻿  main.cpp
+C:\Users\motai\source\repos\ttPDSTSP\ttPDSTSP\main.cpp(134,25): warning C4244: 'initializing': conversion from '_Rep' to 'double', possible loss of data
+C:\Users\motai\source\repos\ttPDSTSP\ttPDSTSP\main.cpp(134,25): warning C4244:         with
+C:\Users\motai\source\repos\ttPDSTSP\ttPDSTSP\main.cpp(134,25): warning C4244:         [
+C:\Users\motai\source\repos\ttPDSTSP\ttPDSTSP\main.cpp(134,25): warning C4244:             _Rep=__int64
+C:\Users\motai\source\repos\ttPDSTSP\ttPDSTSP\main.cpp(134,25): warning C4244:         ]
+  ttPDSTSP.vcxproj -> C:\Users\motai\source\repos\ttPDSTSP\x64\Debug\ttPDSTSP.exe
