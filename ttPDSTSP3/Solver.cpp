@@ -655,7 +655,7 @@ void Solver::RVNS_P() {
                     }
                 }
 
-                // Tính lại CD mới sau khi thay đổi `Np1` hoặc `Np2`
+                // Tính lại CD mới sau khi thay đổi Np1 hoặc Np2
                 double newCD = tinhMaxTimeDrones(newRoute);
                 if (newCD < oldCD) {
                     drones = newRoute;
