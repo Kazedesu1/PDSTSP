@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #ifndef SOLVER_H
 #define SOLVER_H
 
@@ -32,7 +32,7 @@ public:
 
     // Tính tổng thời gian hoàn thành (CT và CD)
     double tinhTotaltime(const std::vector<Drones>& drones, double totalTimeTruck) const;
-
+    vector<int> A2opt(const vector<int>& route);
     void RVNS_T();
     void RVNS_P();
 
