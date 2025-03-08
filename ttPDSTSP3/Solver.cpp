@@ -327,21 +327,21 @@ void Solver::solveA3() {
 
         // tạo danh sách 5 khách hàng gần nhất
         vector<int> nearest;
-        vector<int> candidates = H2;  // Copy danh sách khách hàng từ H2
+        vector<int> candidates = H2;  
 
         for (int i = 0; i < min(5, (int)candidates.size()); i++) {
             auto nearestIt = min_element(candidates.begin(), candidates.end(),
                 [&](int a, int b) { return instance.tau[last][a] < instance.tau[last][b]; });
 
             nearest.push_back(*nearestIt);
-            candidates.erase(nearestIt);  // Xóa khỏi danh sách tạm thời
+            candidates.erase(nearestIt);  
         }
 
         //  Chọn khách hàng gần nhất trong danh sách 5-nearest
         if (!nearest.empty()) {
-            int nextCustomer = nearest[0];  // Chọn khách hàng đầu tiên
+            int nextCustomer = nearest[0];  
             truckRoute.push_back(nextCustomer);
-            H2.erase(remove(H2.begin(), H2.end(), nextCustomer), H2.end());  // Xóa khách hàng khỏi H2
+            H2.erase(remove(H2.begin(), H2.end(), nextCustomer), H2.end());  
         }
     }
     truckRoute.push_back(0);
@@ -373,7 +373,7 @@ void Solver::solveA3() {
             double CT_new = tinhTotalTimeTruck(tempRoute, instance.tau);
             double deltaCT = CT_old - CT_new;
 
-            //  Tính giá trị deltaCTCT - tD_i
+            //  Tính giá trị deltaCT - tD_i
             double tD_i = instance.tauprime[0][c] * 2;
             double score = deltaCT - tD_i;
 
