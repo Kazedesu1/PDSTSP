@@ -13,12 +13,15 @@ Solver::Solver(const INSTANCE& inst) : instance(inst) {}
 void Solver::solveA1() {
     drones.resize(instance.UAVs);
     vector<int> remainingCustomers = instance.C;
-    random_device rd;
-    mt19937 g(rd());
-    shuffle(remainingCustomers.begin(), remainingCustomers.end(), g);  // Tạo hoán vị ngẫu nhiên 
+      
 
     // (1) Nếu tất cả khách hàng có thể giao bằng drone (VD = V \ {0})
     if (instance.Cprime.size() == instance.C.size()) {
+
+        random_device rd;
+        mt19937 g(rd());
+        shuffle(remainingCustomers.begin(), remainingCustomers.end(), g);
+        
         for (int c : remainingCustomers) {
             int bestTruckPos = -1;
             int bestDroneIdx = -1;
