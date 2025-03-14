@@ -13,20 +13,18 @@ Solver::Solver(const INSTANCE& inst) : instance(inst) {}
 void Solver::solveA1() {
     drones.resize(instance.UAVs);
     vector<int> remainingCustomers = instance.C;
-      
-
+    
     // (1) Nếu tất cả khách hàng có thể giao bằng drone (VD = V \ {0})
     if (instance.Cprime.size() == instance.C.size()) {
-
+		truckRoute = { 0,0 };
         random_device rd;
         mt19937 g(rd());
         shuffle(remainingCustomers.begin(), remainingCustomers.end(), g);
-        
+
         for (int c : remainingCustomers) {
             int bestTruckPos = -1;
             int bestDroneIdx = -1;
-            double bestCT = totalTimeTruck;
-            double bestCD = tinhMaxTimeDrones(drones);
+            double bestTime = numeric_limits<double>::infinity();
             bool choseTruck = true;
 
             // Tính CT nếu chèn khách hàng vào Truck
@@ -34,8 +32,8 @@ void Solver::solveA1() {
                 double deltaCT = tinhTimeTruckTang(truckRoute, instance.tau, c, j);
                 double candidateCT = totalTimeTruck + deltaCT;
 
-                if (candidateCT < bestCT) {
-                    bestCT = candidateCT;
+                if (candidateCT < bestTime) {
+                    bestTime = candidateCT;
                     bestTruckPos = j;
                     choseTruck = true;
                 }
@@ -46,8 +44,8 @@ void Solver::solveA1() {
                 double deltaCD = instance.tauprime[0][c] * 2;
                 double candidateCD = max(drones[k].total_time + deltaCD, tinhMaxTimeDrones(drones));
 
-                if (candidateCD < bestCD) {
-                    bestCD = candidateCD;
+                if (candidateCD < bestTime) {
+                    bestTime = candidateCD;
                     bestDroneIdx = k;
                     choseTruck = false;
                 }
@@ -55,7 +53,7 @@ void Solver::solveA1() {
             // Gán khách hàng vào Truck hoặc Drone
             if (choseTruck) {
                 truckRoute.insert(truckRoute.begin() + bestTruckPos, c);
-                totalTimeTruck += tinhTimeTruckTang(truckRoute, instance.tau, c, bestTruckPos);
+                totalTimeTruck = bestTime;
             }
             else {
                 drones[bestDroneIdx].route.push_back(c);
@@ -200,7 +198,9 @@ void Solver::solveA2() {
         totalTimeTruck = tinhTotalTimeTruck(truckRoute, instance.tau);
         RVNS_T();
     }
-
+    else {
+        truckRoute = { 0,0 };
+    }
     // (2) Nếu CDtb > CT, đưa node của H1 sang H2
     if (CD_avg > totalTimeTruck) {
         vector<pair<int, double>> distList;
@@ -330,21 +330,21 @@ void Solver::solveA3() {
 
         // tạo danh sách 5 khách hàng gần nhất
         vector<int> nearest;
-        vector<int> candidates = H2;  
+        vector<int> candidates = H2;  // Copy danh sách khách hàng từ H2
 
         for (int i = 0; i < min(5, (int)candidates.size()); i++) {
             auto nearestIt = min_element(candidates.begin(), candidates.end(),
                 [&](int a, int b) { return instance.tau[last][a] < instance.tau[last][b]; });
 
             nearest.push_back(*nearestIt);
-            candidates.erase(nearestIt);  
+            candidates.erase(nearestIt);  // Xóa khỏi danh sách tạm thời
         }
 
         //  Chọn khách hàng gần nhất trong danh sách 5-nearest
         if (!nearest.empty()) {
-            int nextCustomer = nearest[0];  
+            int nextCustomer = nearest[0];  // Chọn khách hàng đầu tiên
             truckRoute.push_back(nextCustomer);
-            H2.erase(remove(H2.begin(), H2.end(), nextCustomer), H2.end());  
+            H2.erase(remove(H2.begin(), H2.end(), nextCustomer), H2.end());  // Xóa khách hàng khỏi H2
         }
     }
     truckRoute.push_back(0);
@@ -376,7 +376,7 @@ void Solver::solveA3() {
             double CT_new = tinhTotalTimeTruck(tempRoute, instance.tau);
             double deltaCT = CT_old - CT_new;
 
-            //  Tính giá trị deltaCT - tD_i
+            //  Tính giá trị deltaCTCT - tD_i
             double tD_i = instance.tauprime[0][c] * 2;
             double score = deltaCT - tD_i;
 
@@ -658,7 +658,7 @@ void Solver::RVNS_P() {
                     }
                 }
 
-                // Tính lại CD mới sau khi thay đổi Np1 hoặc Np2
+                // Tính lại CD mới sau khi thay đổi `Np1` hoặc `Np2`
                 double newCD = tinhMaxTimeDrones(newRoute);
                 if (newCD < oldCD) {
                     drones = newRoute;
