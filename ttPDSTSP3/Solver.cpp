@@ -13,10 +13,10 @@ Solver::Solver(const INSTANCE& inst) : instance(inst) {}
 void Solver::solveA1() {
     drones.resize(instance.UAVs);
     vector<int> remainingCustomers = instance.C;
-    
+
     // (1) Nếu tất cả khách hàng có thể giao bằng drone (VD = V \ {0})
     if (instance.Cprime.size() == instance.C.size()) {
-		truckRoute = { 0,0 };
+        truckRoute = { 0,0 };
         random_device rd;
         mt19937 g(rd());
         shuffle(remainingCustomers.begin(), remainingCustomers.end(), g);
@@ -139,9 +139,7 @@ void Solver::solveA1() {
         }
     }
 
-    if (totalTimeTruck > CDtb) {
-        RVNS_T();
-    }
+    
 
     // Gán khách hàng còn lại vào drone
     for (int c : H1) {
@@ -290,9 +288,7 @@ void Solver::solveA2() {
         }
     }
 
-    if (totalTimeTruck > CDtb) {
-        RVNS_T();
-    }
+    
 
     // Gán khách hàng còn lại vào drone
     for (int c : H1) {
@@ -488,18 +484,18 @@ void Solver::displaySolution() const {
     cout << "\nMaximum Total Time (Truck + Drones): " << maxTotalTime << "\n";
 }
 void Solver::RVNS_T() {
-    int k_max = 2;  
-    int iterTruck = 10;  
-    int iter1 = 0;  
+    int k_max = 2;
+    int iterTruck = 10;
+    int iter1 = 0;
 
     // Nếu tuyến Truck quá ngắn, không tối ưu hóa
-    if (truckRoute.size() <= 3) return;  
+    if (truckRoute.size() <= 3) return;
 
     vector<int> bestRoute = truckRoute;
     double bestTime = totalTimeTruck;
 
     while (iter1 < iterTruck) {
-        int k = 1;  
+        int k = 1;
 
         while (k <= k_max) {
             vector<int> newRoute = bestRoute;
@@ -512,7 +508,7 @@ void Solver::RVNS_T() {
                     do {
                         i = rand() % (newRoute.size() - 2) + 1;  // Chọn ngẫu nhiên trong khoảng [1, n-1]
                         j = rand() % (newRoute.size() - 2) + 1;
-                    } while (i == j);  
+                    } while (i == j);
 
                     swap(newRoute[i], newRoute[j]);
 
@@ -527,7 +523,7 @@ void Solver::RVNS_T() {
                     do {
                         i = rand() % (newRoute.size() - 3) + 1;
                         j = rand() % (newRoute.size() - 3) + 2;
-                    } while (i >= j);  
+                    } while (i >= j);
 
                     reverse(newRoute.begin() + i, newRoute.begin() + j);
 
@@ -543,15 +539,15 @@ void Solver::RVNS_T() {
             if (newTime < bestTime) {
                 bestRoute = newRoute;
                 bestTime = newTime;
-                k = 1;  
-                iter1 = 0;  
+                k = 1;
+                iter1 = 0;
             }
             else {
-                k++;  
+                k++;
             }
         }
 
-        iter1++;  
+        iter1++;
     }
 
     truckRoute = bestRoute;
@@ -575,7 +571,7 @@ vector<int> Solver::A2opt(const vector<int>& route) {
 
                 if (newCost < oldCost) {
                     reverse(newRoute.begin() + i, newRoute.begin() + j + 1);
-                    improved = true;  
+                    improved = true;
                 }
             }
         }
@@ -585,7 +581,7 @@ vector<int> Solver::A2opt(const vector<int>& route) {
 }
 
 void Solver::RVNS_P() {
-    int iterDrone = 10;
+    int iterDrone = int(instance.n/4);
     int iter3 = 0;
 
     if (drones.empty()) return;
