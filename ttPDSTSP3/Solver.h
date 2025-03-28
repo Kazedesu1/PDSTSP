@@ -15,33 +15,17 @@ struct Drones {
 class Solver {
 public:
     Solver(const INSTANCE& instance);
-    void solveA1();
-    void solveA2();
-    void solveA3();
-
+    void solve();
     void displaySolution() const;
-
-    // Tính thời gian tăng thêm khi thêm khách hàng vào tuyến xe tải
-    double tinhTimeTruckTang(const std::vector<int>& route, const std::vector<std::vector<double>>& tau, int node, int insertPos) const;
-
-    // Tính tổng thời gian hoàn thành của xe tải (CT)
-    double tinhTotalTimeTruck(const std::vector<int>& route, const std::vector<std::vector<double>>& tau) const;
-
-    // Tính tổng thời gian hoàn thành của drone (CD)
-    double tinhMaxTimeDrones(const std::vector<Drones>& drones) const;
-
-    // Tính tổng thời gian hoàn thành (CT và CD)
-    double tinhTotaltime(const std::vector<Drones>& drones, double totalTimeTruck) const;
-    vector<int> A2opt(const vector<int>& route);
-    void RVNS_T();
-    void RVNS_P();
-
-
+    double tinhTimeTruckTang(const vector<int>& route, const vector<vector<double>>& tau, int node, int insertPos) const;
+    double tinhTotaltime(const vector<Drones>& drones, double totalTimeTruck)  const;
     const INSTANCE& instance;
     std::vector<Drones> drones;
-    std::vector<int> truckRoute;  
+    std::vector<int> truckRoute = { 0, 0 };
     double totalTimeTruck = 0;
-};
+    void ruinAndRecreate();
+    void localSearch();
 
+};
 
 #endif // SOLVER_H
