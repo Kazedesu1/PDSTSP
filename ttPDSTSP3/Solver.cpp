@@ -61,9 +61,6 @@ void Solver::solveA1() {
             }
         }
 
-        // Tối ưu hóa Truck và Drone
-        RVNS_T();
-        RVNS_P();
         return;
     }
 
@@ -139,27 +136,7 @@ void Solver::solveA1() {
         }
     }
 
-    
-
-    // Gán khách hàng còn lại vào drone
-    for (int c : H1) {
-        int bestDrone = 0;
-        double minCD = numeric_limits<double>::infinity();
-
-        for (int k = 0; k < drones.size(); ++k) {
-            double candidateCD = drones[k].total_time + instance.tauprime[0][c] * 2;
-
-            if (candidateCD < minCD) {
-                minCD = candidateCD;
-                bestDrone = k;
-            }
-        }
-
-        drones[bestDrone].route.push_back(c);
-        drones[bestDrone].total_time = minCD;
-    }
-    RVNS_T();
-    RVNS_P();
+	applydrone(H1);
 }
 
 void Solver::solveA2() {
@@ -194,7 +171,6 @@ void Solver::solveA2() {
         truckRoute.push_back(0);
 
         totalTimeTruck = tinhTotalTimeTruck(truckRoute, instance.tau);
-        RVNS_T();
     }
     else {
         truckRoute = { 0,0 };
@@ -244,7 +220,6 @@ void Solver::solveA2() {
             }
         }
 
-        RVNS_T();
     }
     // Chạy tiếp bước (2) trong (2) của A1 
 
@@ -287,28 +262,7 @@ void Solver::solveA2() {
             CDtb /= instance.UAVs;
         }
     }
-
-    
-
-    // Gán khách hàng còn lại vào drone
-    for (int c : H1) {
-        int bestDrone = 0;
-        double minCD = numeric_limits<double>::infinity();
-
-        for (int k = 0; k < drones.size(); ++k) {
-            double candidateCD = drones[k].total_time + instance.tauprime[0][c] * 2;
-
-            if (candidateCD < minCD) {
-                minCD = candidateCD;
-                bestDrone = k;
-            }
-        }
-
-        drones[bestDrone].route.push_back(c);
-        drones[bestDrone].total_time = minCD;
-    }
-    RVNS_T();
-    RVNS_P();
+	applydrone(H1);
 
 }
 
@@ -346,7 +300,6 @@ void Solver::solveA3() {
     truckRoute.push_back(0);
 
     totalTimeTruck = tinhTotalTimeTruck(truckRoute, instance.tau);
-    RVNS_T();
 
 
     // (2) Di chuyển khách hàng từ Truck sang Drone để cân bằng tải
@@ -390,18 +343,6 @@ void Solver::solveA3() {
         H1.push_back(bestCustomer);
 
         // Chèn khách hàng vào Drone có thời gian nhỏ nhất
-        int bestDrone = 0;
-        double minCD = numeric_limits<double>::infinity();
-
-        for (int k = 0; k < drones.size(); ++k) {
-            if (drones[k].total_time <= minCD) {
-                minCD = drones[k].total_time;
-                bestDrone = k;
-            }
-        }
-
-        drones[bestDrone].route.push_back(bestCustomer);
-        drones[bestDrone].total_time += instance.tauprime[0][bestCustomer] * 2;
 
         truckRoute.erase(remove(truckRoute.begin(), truckRoute.end(), bestCustomer), truckRoute.end());
         totalTimeTruck = tinhTotalTimeTruck(truckRoute, instance.tau);
@@ -413,8 +354,8 @@ void Solver::solveA3() {
         }
         CDtb /= max(1, (int)drones.size());
     }
-    RVNS_T();
-    RVNS_P();
+    
+	applydrone(H1);
 }
 
 
@@ -483,258 +424,285 @@ void Solver::displaySolution() const {
     double maxTotalTime = tinhTotaltime(drones, totalTimeTruck);
     cout << "\nMaximum Total Time (Truck + Drones): " << maxTotalTime << "\n";
 }
-void Solver::RVNS_T() {
-    int k_max = 2;
-    int iterTruck = 10;
-    int iter1 = 0;
 
-    // Nếu tuyến Truck quá ngắn, không tối ưu hóa
-    if (truckRoute.size() <= 3) return;
+void Solver::applydrone(vector<int>& H1) {
+    sort(H1.begin(), H1.end(), [&](int a, int b) {
+        return instance.tau[0][a] < instance.tau[0][b];
+        });
 
-    vector<int> bestRoute = truckRoute;
-    double bestTime = totalTimeTruck;
+    for (int c : H1) {
+        int bestDrone = 0;
+        double minCD = numeric_limits<double>::infinity();
 
-    while (iter1 < iterTruck) {
-        int k = 1;
-
-        while (k <= k_max) {
-            vector<int> newRoute = bestRoute;
-            double newTime = bestTime;
-
-            if (k == 1) {
-                // N1: Swap hai khách hàng bất kỳ trong truckRoute
-                if (newRoute.size() > 3) {
-                    int i, j;
-                    do {
-                        i = rand() % (newRoute.size() - 2) + 1;  // Chọn ngẫu nhiên trong khoảng [1, n-1]
-                        j = rand() % (newRoute.size() - 2) + 1;
-                    } while (i == j);
-
-                    swap(newRoute[i], newRoute[j]);
-
-                    // Áp dụng 2-opt sau khi swap
-                    newRoute = A2opt(newRoute);
-                }
-            }
-            else if (k == 2) {
-                // N2: Đảo ngược một đoạn khách hàng trong truckRoute**
-                if (newRoute.size() > 4) {
-                    int i, j;
-                    do {
-                        i = rand() % (newRoute.size() - 3) + 1;
-                        j = rand() % (newRoute.size() - 3) + 2;
-                    } while (i >= j);
-
-                    reverse(newRoute.begin() + i, newRoute.begin() + j);
-
-                    // Áp dụng 2-opt sau khi đảo ngược đoạn đường
-                    newRoute = A2opt(newRoute);
-                }
-            }
-
-            // Tính lại tổng thời gian Truck mới
-            newTime = tinhTotalTimeTruck(newRoute, instance.tau);
-
-            // Nếu tuyến đường mới tốt hơn, cập nhật lời giải tốt nhất
-            if (newTime < bestTime) {
-                bestRoute = newRoute;
-                bestTime = newTime;
-                k = 1;
-                iter1 = 0;
-            }
-            else {
-                k++;
+        for (int k = 0; k < drones.size(); ++k) {
+            double candidateCD = drones[k].total_time;
+            if (candidateCD < minCD) {
+                minCD = candidateCD;
+                bestDrone = k;
             }
         }
 
-        iter1++;
-    }
-
-    truckRoute = bestRoute;
-    totalTimeTruck = bestTime;
-}
-
-
-vector<int> Solver::A2opt(const vector<int>& route) {
-    vector<int> newRoute = route;
-    bool improved = true;
-
-    while (improved) {
-        improved = false;
-        for (size_t i = 1; i < newRoute.size() - 2; ++i) {
-            for (size_t j = i + 1; j < newRoute.size() - 1; ++j) {
-                double oldCost = instance.tau[newRoute[i - 1]][newRoute[i]] +
-                    instance.tau[newRoute[j]][newRoute[j + 1]];
-
-                double newCost = instance.tau[newRoute[i - 1]][newRoute[j]] +
-                    instance.tau[newRoute[i]][newRoute[j + 1]];
-
-                if (newCost < oldCost) {
-                    reverse(newRoute.begin() + i, newRoute.begin() + j + 1);
-                    improved = true;
-                }
-            }
-        }
-    }
-
-    return newRoute;
-}
-
-void Solver::RVNS_P() {
-    int iterDrone = int(instance.n/4);
-    int iter3 = 0;
-
-    if (drones.empty()) return;
-
-    // Nếu tổng số khách hàng trong drone <= 1, không tối ưu
-    int sumnode = 0;
-    for (const auto& drone : drones) {
-        sumnode += drone.route.size();
-    }
-    if (sumnode <= 1) return;
-
-    while (iter3 < iterDrone) {
-        bool improved = false;
-        int k = 1;
-        int k_max = 4;
-
-        while (k <= k_max) {
-            double oldCD = tinhMaxTimeDrones(drones);
-            bool localImproved = false;
-            vector<Drones> newRoute = drones;
-
-            if (k == 1) {
-                //  Np1: Relocate khách hàng từ drone có thời gian lớn nhất sang drone có thời gian nhỏ nhất
-                int maxDrone = -1, minDrone = -1;
-                double maxTime = -1, minTime = numeric_limits<double>::infinity();
-
-                for (size_t d = 0; d < drones.size(); ++d) {
-                    if (drones[d].route.size() > 1) {
-                        if (drones[d].total_time > maxTime) {
-                            maxTime = drones[d].total_time;
-                            maxDrone = d;
-                        }
-                        if (drones[d].total_time < minTime) {
-                            minTime = drones[d].total_time;
-                            minDrone = d;
-                        }
-                    }
-                }
-
-                if (maxDrone != -1 && minDrone != -1 && !newRoute[maxDrone].route.empty()) {
-                    int idx = rand() % newRoute[maxDrone].route.size();
-                    int customer = newRoute[maxDrone].route[idx];
-                    newRoute[maxDrone].route.erase(newRoute[maxDrone].route.begin() + idx);
-                    newRoute[minDrone].route.push_back(customer);
-                    localImproved = true;
-                }
-            }
-            else if (k == 2) {
-                // Np2: Hoán đổi khách hàng giữa hai drone khác nhau
-                if (drones.size() > 1) {
-                    int d1, d2;
-                    do {
-                        d1 = rand() % drones.size();
-                        d2 = rand() % drones.size();
-                    } while (d1 == d2 || drones[d1].route.empty() || drones[d2].route.empty());
-
-                    int idx1 = rand() % newRoute[d1].route.size();
-                    int idx2 = rand() % newRoute[d2].route.size();
-                    swap(newRoute[d1].route[idx1], newRoute[d2].route[idx2]);
-                    localImproved = true;
-                }
-            }
-
-            if (localImproved) {
-                // cập nhật lại total_time của từng drone trong newRoute
-                for (auto& drone : newRoute) {
-                    drone.total_time = 0;
-                    for (int c : drone.route) {
-                        drone.total_time += instance.tauprime[0][c] * 2;
-                    }
-                }
-
-                // Tính lại CD mới sau khi thay đổi `Np1` hoặc `Np2`
-                double newCD = tinhMaxTimeDrones(newRoute);
-                if (newCD < oldCD) {
-                    drones = newRoute;
-                    improved = true;
-                    iter3 = 0;
-                    k = 1;
-                    continue;
-                }
-            }
-
-            // Tạo danh sách PE để dùng cho Np3, Np4
-            vector<int> PE;
-            for (const auto& drone : drones) {
-                PE.insert(PE.end(), drone.route.begin(), drone.route.end());
-            }
-            vector<int> newPE = PE;
-
-            if (k == 3) {
-                //  Np3: Dịch chuyển vòng lặp một đoạn khách hàng trong PE
-                if (newPE.size() > 2) {
-                    int k1, k2;
-                    do {
-                        k1 = rand() % (newPE.size() - 2);
-                        k2 = rand() % (newPE.size() - 1);
-                    } while (k1 >= k2);
-
-                    int maxAlpha = k2 - k1;
-                    if (maxAlpha > 0) {
-                        int alpha = 1 + rand() % maxAlpha;
-                        rotate(newPE.begin() + k1, newPE.begin() + k2 - alpha, newPE.begin() + k2);
-                        localImproved = true;
-                    }
-                }
-            }
-            else if (k == 4) {
-                //  Np4: Đảo ngược thứ tự một đoạn khách hàng trong PE
-                if (newPE.size() > 2) {
-                    int k1, k2;
-                    do {
-                        k1 = rand() % (newPE.size() - 2);
-                        k2 = rand() % (newPE.size() - 1);
-                    } while (k1 >= k2);
-                    reverse(newPE.begin() + k1, newPE.begin() + k2);
-                    localImproved = true;
-                }
-            }
-
-            if (localImproved) {
-                //  Tính lại CD mới sau khi thay đổi PE
-                double newCD = 0;
-                for (auto& drone : drones) {
-                    drone.total_time = 0;
-                    for (int c : drone.route) {
-                        drone.total_time += instance.tauprime[0][c] * 2;
-                    }
-                    newCD = max(newCD, drone.total_time);
-                }
-
-                if (newCD < oldCD) {
-                    PE = newPE;
-                    improved = true;
-                    iter3 = 0;
-                    k = 1;
-
-                    // Cập nhật lại danh sách khách hàng trong drones theo PE
-                    size_t index = 0;
-                    for (auto& drone : drones) {
-                        drone.route.clear();
-                    }
-                    for (size_t i = 0; i < PE.size(); ++i) {
-                        int droneIdx = i % drones.size();
-                        drones[droneIdx].route.push_back(PE[i]);
-                    }
-                    continue;
-                }
-            }
-
-            k++;  // Chuyển sang hàng xóm tiếp theo nếu không có cải thiện
-        }
-
-        if (!improved) iter3++;  // Nếu không có cải thiện, tăng iter3
+        drones[bestDrone].route.push_back(c);
+        drones[bestDrone].total_time += instance.tauprime[0][c] * 2;
     }
 }
+
+
+
+
+
+//void Solver::RVNS_T() {
+//    int k_max = 2;
+//    int iterTruck = 10;
+//    int iter1 = 0;
+//
+//    // Nếu tuyến Truck quá ngắn, không tối ưu hóa
+//    if (truckRoute.size() <= 3) return;
+//
+//    vector<int> bestRoute = truckRoute;
+//    double bestTime = totalTimeTruck;
+//
+//    while (iter1 < iterTruck) {
+//        int k = 1;
+//
+//        while (k <= k_max) {
+//            vector<int> newRoute = bestRoute;
+//            double newTime = bestTime;
+//
+//            if (k == 1) {
+//                // N1: Swap hai khách hàng bất kỳ trong truckRoute
+//                if (newRoute.size() > 3) {
+//                    int i, j;
+//                    do {
+//                        i = rand() % (newRoute.size() - 2) + 1;  // Chọn ngẫu nhiên trong khoảng [1, n-1]
+//                        j = rand() % (newRoute.size() - 2) + 1;
+//                    } while (i == j);
+//
+//                    swap(newRoute[i], newRoute[j]);
+//
+//                    // Áp dụng 2-opt sau khi swap
+//                    newRoute = A2opt(newRoute);
+//                }
+//            }
+//            else if (k == 2) {
+//                // N2: Đảo ngược một đoạn khách hàng trong truckRoute**
+//                if (newRoute.size() > 4) {
+//                    int i, j;
+//                    do {
+//                        i = rand() % (newRoute.size() - 3) + 1;
+//                        j = rand() % (newRoute.size() - 3) + 2;
+//                    } while (i >= j);
+//
+//                    reverse(newRoute.begin() + i, newRoute.begin() + j);
+//
+//                    // Áp dụng 2-opt sau khi đảo ngược đoạn đường
+//                    newRoute = A2opt(newRoute);
+//                }
+//            }
+//
+//            // Tính lại tổng thời gian Truck mới
+//            newTime = tinhTotalTimeTruck(newRoute, instance.tau);
+//
+//            // Nếu tuyến đường mới tốt hơn, cập nhật lời giải tốt nhất
+//            if (newTime < bestTime) {
+//                bestRoute = newRoute;
+//                bestTime = newTime;
+//                k = 1;
+//                iter1 = 0;
+//            }
+//            else {
+//                k++;
+//            }
+//        }
+//
+//        iter1++;
+//    }
+//
+//    truckRoute = bestRoute;
+//    totalTimeTruck = bestTime;
+//}
+//
+//
+//vector<int> Solver::A2opt(const vector<int>& route) {
+//    vector<int> newRoute = route;
+//    bool improved = true;
+//
+//    while (improved) {
+//        improved = false;
+//        for (size_t i = 1; i < newRoute.size() - 2; ++i) {
+//            for (size_t j = i + 1; j < newRoute.size() - 1; ++j) {
+//                double oldCost = instance.tau[newRoute[i - 1]][newRoute[i]] +
+//                    instance.tau[newRoute[j]][newRoute[j + 1]];
+//
+//                double newCost = instance.tau[newRoute[i - 1]][newRoute[j]] +
+//                    instance.tau[newRoute[i]][newRoute[j + 1]];
+//
+//                if (newCost < oldCost) {
+//                    reverse(newRoute.begin() + i, newRoute.begin() + j + 1);
+//                    improved = true;
+//                }
+//            }
+//        }
+//    }
+//
+//    return newRoute;
+//}
+//
+//void Solver::RVNS_P() {
+//    int iterDrone = int(instance.n/4);
+//    int iter3 = 0;
+//
+//    if (drones.empty()) return;
+//
+//    // Nếu tổng số khách hàng trong drone <= 1, không tối ưu
+//    int sumnode = 0;
+//    for (const auto& drone : drones) {
+//        sumnode += drone.route.size();
+//    }
+//    if (sumnode <= 1) return;
+//
+//    while (iter3 < iterDrone) {
+//        bool improved = false;
+//        int k = 1;
+//        int k_max = 4;
+//
+//        while (k <= k_max) {
+//            double oldCD = tinhMaxTimeDrones(drones);
+//            bool localImproved = false;
+//            vector<Drones> newRoute = drones;
+//
+//            if (k == 1) {
+//                //  Np1: Relocate khách hàng từ drone có thời gian lớn nhất sang drone có thời gian nhỏ nhất
+//                int maxDrone = -1, minDrone = -1;
+//                double maxTime = -1, minTime = numeric_limits<double>::infinity();
+//
+//                for (size_t d = 0; d < drones.size(); ++d) {
+//                    if (drones[d].route.size() > 1) {
+//                        if (drones[d].total_time > maxTime) {
+//                            maxTime = drones[d].total_time;
+//                            maxDrone = d;
+//                        }
+//                        if (drones[d].total_time < minTime) {
+//                            minTime = drones[d].total_time;
+//                            minDrone = d;
+//                        }
+//                    }
+//                }
+//
+//                if (maxDrone != -1 && minDrone != -1 && !newRoute[maxDrone].route.empty()) {
+//                    int idx = rand() % newRoute[maxDrone].route.size();
+//                    int customer = newRoute[maxDrone].route[idx];
+//                    newRoute[maxDrone].route.erase(newRoute[maxDrone].route.begin() + idx);
+//                    newRoute[minDrone].route.push_back(customer);
+//                    localImproved = true;
+//                }
+//            }
+//            else if (k == 2) {
+//                // Np2: Hoán đổi khách hàng giữa hai drone khác nhau
+//                if (drones.size() > 1) {
+//                    int d1, d2;
+//                    do {
+//                        d1 = rand() % drones.size();
+//                        d2 = rand() % drones.size();
+//                    } while (d1 == d2 || drones[d1].route.empty() || drones[d2].route.empty());
+//
+//                    int idx1 = rand() % newRoute[d1].route.size();
+//                    int idx2 = rand() % newRoute[d2].route.size();
+//                    swap(newRoute[d1].route[idx1], newRoute[d2].route[idx2]);
+//                    localImproved = true;
+//                }
+//            }
+//
+//            if (localImproved) {
+//                // cập nhật lại total_time của từng drone trong newRoute
+//                for (auto& drone : newRoute) {
+//                    drone.total_time = 0;
+//                    for (int c : drone.route) {
+//                        drone.total_time += instance.tauprime[0][c] * 2;
+//                    }
+//                }
+//
+//                // Tính lại CD mới sau khi thay đổi `Np1` hoặc `Np2`
+//                double newCD = tinhMaxTimeDrones(newRoute);
+//                if (newCD < oldCD) {
+//                    drones = newRoute;
+//                    improved = true;
+//                    iter3 = 0;
+//                    k = 1;
+//                    continue;
+//                }
+//            }
+//
+//            // Tạo danh sách PE để dùng cho Np3, Np4
+//            vector<int> PE;
+//            for (const auto& drone : drones) {
+//                PE.insert(PE.end(), drone.route.begin(), drone.route.end());
+//            }
+//            vector<int> newPE = PE;
+//
+//            if (k == 3) {
+//                //  Np3: Dịch chuyển vòng lặp một đoạn khách hàng trong PE
+//                if (newPE.size() > 2) {
+//                    int k1, k2;
+//                    do {
+//                        k1 = rand() % (newPE.size() - 2);
+//                        k2 = rand() % (newPE.size() - 1);
+//                    } while (k1 >= k2);
+//
+//                    int maxAlpha = k2 - k1;
+//                    if (maxAlpha > 0) {
+//                        int alpha = 1 + rand() % maxAlpha;
+//                        rotate(newPE.begin() + k1, newPE.begin() + k2 - alpha, newPE.begin() + k2);
+//                        localImproved = true;
+//                    }
+//                }
+//            }
+//            else if (k == 4) {
+//                //  Np4: Đảo ngược thứ tự một đoạn khách hàng trong PE
+//                if (newPE.size() > 2) {
+//                    int k1, k2;
+//                    do {
+//                        k1 = rand() % (newPE.size() - 2);
+//                        k2 = rand() % (newPE.size() - 1);
+//                    } while (k1 >= k2);
+//                    reverse(newPE.begin() + k1, newPE.begin() + k2);
+//                    localImproved = true;
+//                }
+//            }
+//
+//            if (localImproved) {
+//                //  Tính lại CD mới sau khi thay đổi PE
+//                double newCD = 0;
+//                for (auto& drone : drones) {
+//                    drone.total_time = 0;
+//                    for (int c : drone.route) {
+//                        drone.total_time += instance.tauprime[0][c] * 2;
+//                    }
+//                    newCD = max(newCD, drone.total_time);
+//                }
+//
+//                if (newCD < oldCD) {
+//                    PE = newPE;
+//                    improved = true;
+//                    iter3 = 0;
+//                    k = 1;
+//
+//                    // Cập nhật lại danh sách khách hàng trong drones theo PE
+//                    size_t index = 0;
+//                    for (auto& drone : drones) {
+//                        drone.route.clear();
+//                    }
+//                    for (size_t i = 0; i < PE.size(); ++i) {
+//                        int droneIdx = i % drones.size();
+//                        drones[droneIdx].route.push_back(PE[i]);
+//                    }
+//                    continue;
+//                }
+//            }
+//
+//            k++;  // Chuyển sang hàng xóm tiếp theo nếu không có cải thiện
+//        }
+//
+//        if (!improved) iter3++;  // Nếu không có cải thiện, tăng iter3
+//    }
+//}
