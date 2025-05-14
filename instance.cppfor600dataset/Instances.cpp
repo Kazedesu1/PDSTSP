@@ -1,4 +1,4 @@
-﻿#include "Instances.h"
+#include "Instances.h"
 #include <stdexcept>
 using namespace std;
 
@@ -41,7 +41,7 @@ bool INSTANCE::loadFromFile(const string& filename)
 
 	//lọc ra Cprime
 	for (int i = 0; i < n; i++) {
-		if (nodes[i][3] == 0) {
+		if (nodes[i][0] != 0 && nodes[i][3] == 0) {
 			Cprime.push_back(i);
 		}
 		if (nodes[i][0] != 0)
