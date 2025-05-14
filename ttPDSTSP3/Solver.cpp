@@ -123,8 +123,8 @@ void Solver::solveA1() {
         }
 
         if (bestCustomer != -1) {
+            totalTimeTruck += tinhTimeTruckTang(truckRoute, instance.tau, bestCustomer, bestPos);
             truckRoute.insert(truckRoute.begin() + bestPos, bestCustomer);
-            totalTimeTruck = tinhTotalTimeTruck(truckRoute, instance.tau);
             H1.erase(remove(H1.begin(), H1.end(), bestCustomer), H1.end());
 
             // Cập nhật CDtb
@@ -136,7 +136,7 @@ void Solver::solveA1() {
         }
     }
 
-	applydrone(H1);
+    applydrone(H1);
 }
 
 void Solver::solveA2() {
@@ -178,15 +178,31 @@ void Solver::solveA2() {
     // (2) Nếu CDtb > CT, đưa node của H1 sang H2
     if (CD_avg > totalTimeTruck) {
         vector<pair<int, double>> distList;
-        for (int c : H1) {
-            distList.emplace_back(c, instance.tauprime[0][c] * 2);
-        }
 
-        // sắp xếp H1 theo thời gian giao hàng giảm dần
-        sort(distList.begin(), distList.end(), [](pair<int, double> a, pair<int, double> b) {
+        // sắp xếp H1 theo thứ tự giảm dần của Dist(i) là tổng của 5 khoảng cách của đỉnh i đến 5 đỉnh có khoảng cách gần đỉnh i nhất  
+        for (int c : H1) {
+            vector<double> distances;
+            for (int i = 0; i < instance.nodes.size(); ++i) {
+                if (i != c) {
+                    distances.push_back(instance.tau[c][i]);
+                }
+            }
+            sort(distances.begin(), distances.end());
+            double distSum = 0;
+            for (int i = 0; i < min(5, (int)distances.size()); ++i) {
+                distSum += distances[i];
+            }
+            distList.emplace_back(c, distSum);
+        }
+        sort(distList.begin(), distList.end(), [](const pair<int, double>& a, const pair<int, double>& b) {
             return a.second > b.second;
             });
 
+        H1.clear();
+        for (const auto& p : distList) {
+            H1.push_back(p.first);
+        }
+ 
         // Chuyển gamma * H1 khách hàng từ cuối danh sách H1 sang H2
         double gamma = 0.3;  // Hằng số gamma
         int numMove = max(1, (int)(gamma * H1.size()));
@@ -215,8 +231,8 @@ void Solver::solveA2() {
             }
 
             if (bestPos != -1) {
+                totalTimeTruck += tinhTimeTruckTang(truckRoute, instance.tau, c, bestPos);
                 truckRoute.insert(truckRoute.begin() + bestPos, c);
-                totalTimeTruck = tinhTotalTimeTruck(truckRoute, instance.tau);
             }
         }
 
@@ -250,8 +266,8 @@ void Solver::solveA2() {
         }
 
         if (bestCustomer != -1) {
+            totalTimeTruck += tinhTimeTruckTang(truckRoute, instance.tau, bestCustomer, bestPos);
             truckRoute.insert(truckRoute.begin() + bestPos, bestCustomer);
-            totalTimeTruck = tinhTotalTimeTruck(truckRoute, instance.tau);
             H1.erase(remove(H1.begin(), H1.end(), bestCustomer), H1.end());
 
             // Cập nhật CDtb
@@ -262,8 +278,7 @@ void Solver::solveA2() {
             CDtb /= instance.UAVs;
         }
     }
-	applydrone(H1);
-
+    applydrone(H1);
 }
 
 
@@ -308,6 +323,7 @@ void Solver::solveA3() {
     while (totalTimeTruck > CDtb) {
         int bestCustomer = -1;
         double maxDelta = -numeric_limits<double>::infinity();
+        double bestdeltaCT = 0;
 
         // Tìm khách hàng drone có thể chuyển có giá trị deltaCT - tD_i lớn nhất
 
@@ -318,12 +334,8 @@ void Solver::solveA3() {
             int pos = distance(truckRoute.begin(), it);
 
             // Tính deltaCT nếu loại bỏ c khỏi Truck
-            double CT_old = totalTimeTruck;
-
-            vector<int> tempRoute = truckRoute;
-            tempRoute.erase(tempRoute.begin() + pos);
-            double CT_new = tinhTotalTimeTruck(tempRoute, instance.tau);
-            double deltaCT = CT_old - CT_new;
+            double deltaCT = instance.tau[truckRoute[pos - 1]][c] + instance.tau[c][truckRoute[pos + 1]] - instance.tau[truckRoute[pos - 1]][truckRoute[pos + 1]];;
+			
 
             //  Tính giá trị deltaCTCT - tD_i
             double tD_i = instance.tauprime[0][c] * 2;
@@ -333,6 +345,7 @@ void Solver::solveA3() {
             if (score > maxDelta) {
                 maxDelta = score;
                 bestCustomer = c;
+				bestdeltaCT = deltaCT;
             }
         }
 
@@ -342,10 +355,9 @@ void Solver::solveA3() {
         H2.erase(remove(H2.begin(), H2.end(), bestCustomer), H2.end());
         H1.push_back(bestCustomer);
 
-        // Chèn khách hàng vào Drone có thời gian nhỏ nhất
 
         truckRoute.erase(remove(truckRoute.begin(), truckRoute.end(), bestCustomer), truckRoute.end());
-        totalTimeTruck = tinhTotalTimeTruck(truckRoute, instance.tau);
+        totalTimeTruck -= bestdeltaCT;
 
         // tính CDtb 
         CDtb = 0;
@@ -354,10 +366,9 @@ void Solver::solveA3() {
         }
         CDtb /= max(1, (int)drones.size());
     }
-    
-	applydrone(H1);
-}
 
+    applydrone(H1);
+}
 
 
 
@@ -427,7 +438,7 @@ void Solver::displaySolution() const {
 
 void Solver::applydrone(vector<int>& H1) {
     sort(H1.begin(), H1.end(), [&](int a, int b) {
-        return instance.tau[0][a] < instance.tau[0][b];
+        return instance.tau[0][a] > instance.tau[0][b];
         });
 
     for (int c : H1) {
@@ -446,7 +457,6 @@ void Solver::applydrone(vector<int>& H1) {
         drones[bestDrone].total_time += instance.tauprime[0][c] * 2;
     }
 }
-
 
 
 
