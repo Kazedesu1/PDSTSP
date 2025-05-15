@@ -11,87 +11,89 @@ Solver::Solver(const INSTANCE& inst) : instance(inst) {}
 void Solver::solve() {
     drones.resize(instance.UAVs);
     vector<int> remainingCustomers = instance.C;
-    // Sort the customers in descending order of distance to the depot
-    std::sort(remainingCustomers.begin(), remainingCustomers.end(), 
+
+    std::sort(remainingCustomers.begin(), remainingCustomers.end(),
         [this](int a, int b) {
             return instance.tau[0][a] > instance.tau[0][b];
         });
-
 
     for (int c : remainingCustomers) {
         int choseTruck = 0;
         int posBest = -1;
         int bestDrone = -1;
         double bestTime = numeric_limits<double>::infinity();
-        double minTimeIncrease = numeric_limits<double>::infinity();
 
-        bool hasIdleDrone = false;
+        // --- 1. Best insertion cho truck ---
+        double minTimeIncrease = numeric_limits<double>::infinity();
+        double bestTruckCandidateTime = numeric_limits<double>::infinity();
+        double maxDroneTime = 0.0;
         for (const auto& drone : drones) {
-            if (drone.total_time == 0) {
-                hasIdleDrone = true;
-                break;
-            }
+            maxDroneTime = max(maxDroneTime, drone.total_time);
         }
 
-        // Truck candidate
         for (int j = 1; j < truckRoute.size(); ++j) {
             double timeIncrease = tinhTimeTruckTang(truckRoute, instance.tau, c, j);
-            double candidateTruckTime = totalTimeTruck + timeIncrease;
-
-            double maxDroneTime = 0.0;
-            for (const auto& drone : drones) {
-                maxDroneTime = max(maxDroneTime, drone.total_time);
-            }
-
-            double totalCandidateTime = max(candidateTruckTime, maxDroneTime);
-
-            if (totalCandidateTime < bestTime ||
-                (totalCandidateTime == bestTime && !hasIdleDrone && timeIncrease < minTimeIncrease)) {
-                bestTime = totalCandidateTime;
-                posBest = j;
-                choseTruck = 1;
+            if (timeIncrease < minTimeIncrease) {
                 minTimeIncrease = timeIncrease;
+                posBest = j;
             }
         }
 
+        if (posBest != -1) {
+            bestTruckCandidateTime = totalTimeTruck + minTimeIncrease;
+            double totalTruckCandidateTime = max(bestTruckCandidateTime, maxDroneTime);
+
+            bestTime = totalTruckCandidateTime;
+            choseTruck = 1;
+        }
+
+        // --- 2. So sánh với drone ---
         if (find(instance.Cprime.begin(), instance.Cprime.end(), c) != instance.Cprime.end()) {
+            double sumDroneTime = 0.0;
+            for (const auto& d : drones) {
+                sumDroneTime += d.total_time;
+            }
+            double meanTotalTimeDrone = (drones.size() > 0) ? (sumDroneTime / drones.size()) : 0.0;
+
             for (int k = 0; k < drones.size(); ++k) {
                 double droneTimeIncrease = instance.tauprime[0][c] * 2;
                 double candidateDroneTime = drones[k].total_time + droneTimeIncrease;
 
-                double maxDroneTime = 0.0;
-                for (const auto& drone : drones) {
-                    maxDroneTime = max(maxDroneTime, drone.total_time);
+                double maxDroneTimeNow = 0.0;
+                for (int d = 0; d < drones.size(); ++d) {
+                    if (d == k)
+                        maxDroneTimeNow = max(maxDroneTimeNow, candidateDroneTime);
+                    else
+                        maxDroneTimeNow = max(maxDroneTimeNow, drones[d].total_time);
                 }
 
-                double totalCandidateTime = max({ totalTimeTruck, candidateDroneTime, maxDroneTime });
+                double totalCandidateTime = max(totalTimeTruck, maxDroneTimeNow);
 
-                if (totalCandidateTime < bestTime ||
-                    (totalCandidateTime == bestTime &&
-                        (hasIdleDrone || (!hasIdleDrone && droneTimeIncrease < minTimeIncrease)))) {
+                if (totalCandidateTime < bestTime) {
                     bestTime = totalCandidateTime;
                     bestDrone = k;
                     choseTruck = 0;
-                    minTimeIncrease = droneTimeIncrease;
+                }
+                else if (totalCandidateTime == bestTime &&
+                    bestTruckCandidateTime == totalCandidateTime &&
+                    bestTruckCandidateTime > meanTotalTimeDrone) {
+                    bestDrone = k;
+                    choseTruck = 0;
                 }
             }
         }
 
-        // Cập nhật kết quả
+        // --- 3. Cập nhật kết quả ---
         if (choseTruck == 0) {
             drones[bestDrone].route.push_back(c);
             drones[bestDrone].total_time += instance.tauprime[0][c] * 2;
         }
         else {
-            double timeIncrease = tinhTimeTruckTang(truckRoute, instance.tau, c, posBest);
-            totalTimeTruck += timeIncrease;
+            totalTimeTruck += minTimeIncrease;
             truckRoute.insert(truckRoute.begin() + posBest, c);
         }
     }
 }
-
-
-
 
 
 
