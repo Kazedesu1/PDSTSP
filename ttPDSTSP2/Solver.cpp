@@ -1,7 +1,6 @@
-﻿#include "Solver.h"
+#include "Solver.h"
 #include <iostream>
 #include <algorithm>
-#include "utils.h"
 #include <limits>
 #include <cstdlib>
 #include <ctime>
@@ -12,30 +11,24 @@ Solver::Solver(const INSTANCE& inst) : instance(inst) {}
 void Solver::solve() {
     drones.resize(instance.UAVs);
     vector<int> remainingCustomers = instance.C;
-    int blink_rate = 0.1;
-
+    // Sort remainingCustomers by distance from the depot in descending order
+    std::sort(remainingCustomers.begin(), remainingCustomers.end(), 
+       [&](int a, int b) {
+           return instance.tau[0][a] > instance.tau[0][b];
+       });
+    
     for (int c : remainingCustomers) {
-        int choseTruck = 0;
-        int posBest = -1;
-        int bestDrone = -1;
-        double bestTime = numeric_limits<double>::infinity();
-
         int p = -1;
-        double bestCost = 1e10;
+        double bestCost = numeric_limits<double>::infinity();
         bool to_drone = false;
-        vector<int>& tour = truckRoute;
 
         vector<int> position;
-        for (int i = 1; i < tour.size(); ++i)
+        for (int i = 1; i < truckRoute.size(); ++i)
             position.push_back(i);
-        Utils::shuffle(position);
 
         for (int i : position) {
-            if (Utils::real_random_generator(0, 1) >= 1 - blink_rate && p != -1) continue;
-
-            double Tnew = totalTimeTruck + tinhTimeTruckTang(tour, instance.tau, c, i);
-            if (Tnew <= bestCost + 0.00001 ||
-                (Tnew - totalTimeTruck < 0.00001 && Utils::real_random_generator(0, 1) < 0.5)) {
+            double Tnew = totalTimeTruck + tinhTimeTruckTang(truckRoute, instance.tau, c, i);
+            if (Tnew <= bestCost + 0.00001) {
                 to_drone = false;
                 bestCost = Tnew;
                 p = i;
@@ -44,7 +37,6 @@ void Solver::solve() {
 
         if (find(instance.Cprime.begin(), instance.Cprime.end(), c) != instance.Cprime.end()) {
             for (int i = 0; i < drones.size(); ++i) {
-                if (Utils::real_random_generator(0, 1) >= 1 - blink_rate && p != -1) continue;
                 double Tnew = drones[i].total_time + instance.tauprime[0][c] * 2;
                 if (Tnew < bestCost) {
                     to_drone = true;
@@ -66,6 +58,7 @@ void Solver::solve() {
         }
     }
 }
+
 
 
 double Solver::tinhTotaltime(const vector<Drones>& drones, double totalTimeTruck) const {
