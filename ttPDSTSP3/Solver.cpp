@@ -65,16 +65,9 @@ void Solver::solveA1() {
     }
 
     // (2) Trường hợp có khách hàng không thể giao bằng drone (VD != V \ {0})
-    vector<int> truckCustomers, H1;
+    vector<int> truckCustomers = instance.truckonly;
+    vector<int> H1 = instance.Cprime;
 
-    for (int c : instance.C) {
-        if (find(instance.Cprime.begin(), instance.Cprime.end(), c) != instance.Cprime.end()) {
-            H1.push_back(c);
-        }
-        else {
-            truckCustomers.push_back(c);
-        }
-    }
 
     // Tạo tuyến Truck ban đầu bằng nearest neighbor
     if (!truckCustomers.empty()) {
@@ -142,7 +135,7 @@ void Solver::solveA1() {
 void Solver::solveA2() {
     drones.resize(instance.UAVs);
     vector<int> H1 = instance.Cprime;  // H1 = VD
-    vector<int> H2;
+    vector<int> H2 = instance.truckonly;
     double CD_avg = 0;
 
     for (int c : H1) {
@@ -154,19 +147,13 @@ void Solver::solveA2() {
         truckRoute = { 0 };
 
         // Tạo tuyến Truck bằng Nearest Neighbor
-        vector<int> truckCustomers;
-        for (int c : instance.C) {
-            if (find(instance.Cprime.begin(), instance.Cprime.end(), c) == instance.Cprime.end()) {
-                truckCustomers.push_back(c);
-            }
-        }
 
-        while (!truckCustomers.empty()) {
+        while (!H2.empty()) {
             int last = truckRoute.back();
-            auto nearestIt = min_element(truckCustomers.begin(), truckCustomers.end(),
+            auto nearestIt = min_element(H2.begin(), H2.end(),
                 [&](int a, int b) { return instance.tau[last][a] < instance.tau[last][b]; });
             truckRoute.push_back(*nearestIt);
-            truckCustomers.erase(nearestIt);
+            H2.erase(nearestIt);
         }
         truckRoute.push_back(0);
 
@@ -202,7 +189,7 @@ void Solver::solveA2() {
         for (const auto& p : distList) {
             H1.push_back(p.first);
         }
- 
+
         // Chuyển gamma * H1 khách hàng từ cuối danh sách H1 sang H2
         double gamma = 0.3;  // Hằng số gamma
         int numMove = max(1, (int)(gamma * H1.size()));
@@ -335,7 +322,7 @@ void Solver::solveA3() {
 
             // Tính deltaCT nếu loại bỏ c khỏi Truck
             double deltaCT = instance.tau[truckRoute[pos - 1]][c] + instance.tau[c][truckRoute[pos + 1]] - instance.tau[truckRoute[pos - 1]][truckRoute[pos + 1]];;
-			
+
 
             //  Tính giá trị deltaCTCT - tD_i
             double tD_i = instance.tauprime[0][c] * 2;
@@ -345,7 +332,7 @@ void Solver::solveA3() {
             if (score > maxDelta) {
                 maxDelta = score;
                 bestCustomer = c;
-				bestdeltaCT = deltaCT;
+                bestdeltaCT = deltaCT;
             }
         }
 
