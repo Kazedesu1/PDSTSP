@@ -44,6 +44,10 @@ bool INSTANCE::loadFromFile(const string& filename)
 		if (nodes[i][0] != 0 && nodes[i][3] == 0) {
 			Cprime.push_back(i);
 		}
+		if (nodes[i][0] != 0 && nodes[i][3] == 1) {
+			truckonly.push_back(i);
+		}
+
 		if (nodes[i][0] != 0)
 		{
 			C.push_back(i);
