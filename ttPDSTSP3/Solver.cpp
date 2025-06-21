@@ -14,57 +14,6 @@ void Solver::solveA1() {
     drones.resize(instance.UAVs);
     vector<int> remainingCustomers = instance.C;
 
-    // (1) Nếu tất cả khách hàng có thể giao bằng drone (VD = V \ {0})
-    if (instance.Cprime.size() == instance.C.size()) {
-        truckRoute = { 0,0 };
-        random_device rd;
-        mt19937 g(rd());
-        shuffle(remainingCustomers.begin(), remainingCustomers.end(), g);
-
-        for (int c : remainingCustomers) {
-            int bestTruckPos = -1;
-            int bestDroneIdx = -1;
-            double bestTime = numeric_limits<double>::infinity();
-            bool choseTruck = true;
-
-            // Tính CT nếu chèn khách hàng vào Truck
-            for (int j = 1; j < truckRoute.size(); ++j) {
-                double deltaCT = tinhTimeTruckTang(truckRoute, instance.tau, c, j);
-                double candidateCT = totalTimeTruck + deltaCT;
-
-                if (candidateCT < bestTime) {
-                    bestTime = candidateCT;
-                    bestTruckPos = j;
-                    choseTruck = true;
-                }
-            }
-
-            // Tính CD nếu gán khách hàng cho Drone
-            for (int k = 0; k < drones.size(); ++k) {
-                double deltaCD = instance.tauprime[0][c] * 2;
-                double candidateCD = max(drones[k].total_time + deltaCD, tinhMaxTimeDrones(drones));
-
-                if (candidateCD < bestTime) {
-                    bestTime = candidateCD;
-                    bestDroneIdx = k;
-                    choseTruck = false;
-                }
-            }
-            // Gán khách hàng vào Truck hoặc Drone
-            if (choseTruck) {
-                truckRoute.insert(truckRoute.begin() + bestTruckPos, c);
-                totalTimeTruck = bestTime;
-            }
-            else {
-                drones[bestDroneIdx].route.push_back(c);
-                drones[bestDroneIdx].total_time += instance.tauprime[0][c] * 2;
-            }
-        }
-
-        return;
-    }
-
-    // (2) Trường hợp có khách hàng không thể giao bằng drone (VD != V \ {0})
     vector<int> truckCustomers = instance.truckonly;
     vector<int> H1 = instance.Cprime;
 
@@ -88,7 +37,10 @@ void Solver::solveA1() {
         // Tính tổng thời gian Truck 
         totalTimeTruck = tinhTotalTimeTruck(truckRoute, instance.tau);
     }
-
+    else {
+        truckRoute = { 0, 0 }; 
+		totalTimeTruck = 0;
+    }
     //Tính CDtb
     double CDtb = 0;
     for (int c : H1) {
@@ -306,15 +258,15 @@ void Solver::solveA3() {
 
     // (2) Di chuyển khách hàng từ Truck sang Drone để cân bằng tải
     double CDtb = 0;
-
-    while (totalTimeTruck > CDtb) {
+	vector<int> droneeligible = instance.Cprime;  // Khách hàng có thể giao bằng Drone 
+    while (totalTimeTruck > CDtb && !droneeligible.empty()) {
         int bestCustomer = -1;
         double maxDelta = -numeric_limits<double>::infinity();
         double bestdeltaCT = 0;
 
         // Tìm khách hàng drone có thể chuyển có giá trị deltaCT - tD_i lớn nhất
 
-        for (int c : instance.Cprime) {
+        for (int c : droneeligible) {
             auto it = find(truckRoute.begin(), truckRoute.end(), c);
             if (it == truckRoute.end()) continue;
 
@@ -339,13 +291,11 @@ void Solver::solveA3() {
         if (bestCustomer == -1) break;
 
         // Di chuyển khách hàng từ Truck sang Drone
-        H2.erase(remove(H2.begin(), H2.end(), bestCustomer), H2.end());
         H1.push_back(bestCustomer);
 
-
+        droneeligible.erase(remove(droneeligible.begin(), droneeligible.end(), bestCustomer), droneeligible.end());
         truckRoute.erase(remove(truckRoute.begin(), truckRoute.end(), bestCustomer), truckRoute.end());
         totalTimeTruck -= bestdeltaCT;
-
         // tính CDtb 
         CDtb = 0;
         for (int c : H1) {
