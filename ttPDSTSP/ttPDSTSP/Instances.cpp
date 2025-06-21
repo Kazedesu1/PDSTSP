@@ -74,42 +74,45 @@ bool INSTANCE::loadFromFile(const string& filename)
         UAVs = 1;
         n = tau.size(); // n = c+2
 
-		for (int i = 1; i < n-1; i++) { 
-			C.push_back(i);
-            }
-
         // Tính tg drone đi từ 0 đến node i và quay về
-		dDrones.resize(n);
-        for(int i= 0 ; i < n;i++)
-		{
-			dDrones[i] = tinhkc(nodes, i) *2/ nodes[0][3];
-		}
+        dDrones.resize(n);
+        for (int i = 0; i < n; i++)
+        {
+            dDrones[i] = tinhkc(nodes, i) * 2 / nodes[0][3];
+        }
 
         for (int idx = Cprime.size() - 1; idx >= 0; idx--) {
             if ((tauprime[0][Cprime[idx]]) > 15) {
                 Cprime.erase(Cprime.begin() + idx);
             }
         }
-        return true; 
+
+        for (int i = 1; i < n - 1; i++) {
+            if (find(Cprime.begin(), Cprime.end(), i) == Cprime.end()) {
+                truckonly.push_back(i);
+            }
+            C.push_back(i);
+        }
+        return true;
     }
 
     catch (const exception& e) {
         cerr << "Error: " << e.what() << endl;
-        return false; 
+        return false;
     }
 }
 void INSTANCE::displayData()
 {
-	cout << "tau: " << endl;
-	for (const auto& row : tau)
-	{
-		for (const auto& value : row)
-		{
-			cout << value << " ";
-		}
-		cout << endl;
-	}
-	cout << "tauprime: " << endl;
+    cout << "tau: " << endl;
+    for (const auto& row : tau)
+    {
+        for (const auto& value : row)
+        {
+            cout << value << " ";
+        }
+        cout << endl;
+    }
+    cout << "tauprime: " << endl;
     for (const auto& row : tauprime)
     {
         for (const auto& value : row)
@@ -118,12 +121,12 @@ void INSTANCE::displayData()
         }
         cout << endl;
     }
-	cout << "Cprime: ";
-	for (const auto& value : Cprime)
-	{
-		cout << value << " ";
-	}
-    cout << endl<< "nodes: " << endl;
+    cout << "Cprime: ";
+    for (const auto& value : Cprime)
+    {
+        cout << value << " ";
+    }
+    cout << endl << "nodes: " << endl;
     for (const auto& row : nodes)
     {
         for (const auto& value : row)
@@ -132,14 +135,14 @@ void INSTANCE::displayData()
         }
         cout << endl;
     }
-	cout << "Ddrone: ";
-	for (const auto& value : dDrones)
-	{
-		cout << value << " ";
-	}
-	cout << endl;
-	cout << "UAVs: " << UAVs << endl;
-	cout << "n: " << n << endl;
+    cout << "Ddrone: ";
+    for (const auto& value : dDrones)
+    {
+        cout << value << " ";
+    }
+    cout << endl;
+    cout << "UAVs: " << UAVs << endl;
+    cout << "n: " << n << endl;
 }
 
 double tinhkc(const vector<vector<double>>& nodes, int node) {
@@ -147,4 +150,3 @@ double tinhkc(const vector<vector<double>>& nodes, int node) {
     c = sqrt(pow(nodes[0][1] - nodes[node][1], 2) + pow(nodes[0][2] - nodes[node][2], 2));
     return c;
 }
-

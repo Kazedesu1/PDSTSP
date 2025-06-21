@@ -11,6 +11,10 @@ struct Drones {
     std::vector<int> route;
     Drones() : total_time(0), route() {}
 };
+struct InsertionInfo {
+    double increase;
+    int pos;
+};
 
 class Solver {
 public:
@@ -19,13 +23,14 @@ public:
     void displaySolution() const;
     double tinhTimeTruckTang(const vector<int>& route, const vector<vector<double>>& tau, int node, int insertPos ) const;
     double tinhTotaltime(const vector<Drones>& drones, double totalTimeTruck)  const;
+    double tinhTotalTimeTruck(const vector<int>& route, const vector<vector<double>>& tau) const;
     const INSTANCE& instance;
     std::vector<Drones> drones;
     std::vector<int> truckRoute = { 0, 0 };
     double totalTimeTruck = 0;
     void ruinAndRecreate() ;
     void localSearch() ;
-
+    void setAlpha(double a);
 };
 
 #endif // SOLVER_H

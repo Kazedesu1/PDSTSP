@@ -13,11 +13,12 @@ public:
     vector<vector<double>> tauprime;
     vector<vector<double>> nodes;
     vector<int> Cprime;
+    vector<int> truckonly;
     vector<int> C;
     vector<double> dDrones;
     int UAVs;
     int n;
-    bool loadFromFile(const std::string& filename = "20140813T111604.csv");
+    bool loadFromFile(const std::string& filename = "att48_0_2_1_1.txt");
     void displayData();
 };
 double tinhkc(const vector<vector<double>>& mat, int node);
